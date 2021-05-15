@@ -91,24 +91,29 @@ def compute(input, n, method, graph, k_min, k_max, k_num, delta, r, n_jobs):
     print("take_n", n)
     print("KS", ks)
 
-    n_splits = 5
+    n_repeats = 5
+    n_splits = 2
     factor = 100
 
-    dw1 = np.zeros((n_splits, k_num))
+    dw1 = np.zeros((n_splits * n_repeats, k_num))
 
-    # do splits
-    kf = KFold(n_splits=n_splits, shuffle=True, random_state=r)
-    kf.get_n_splits(X)
+    for p in range(n_repeats):
 
-    # for each split
-    for i, (train_idx, test_idx) in enumerate(kf.split(np.zeros((n, 1)))):
+        # do splits
+        kf = KFold(n_splits=n_splits, shuffle=True, random_state=r)
+        kf.get_n_splits(X)
 
-        # set train/test
-        X_train = X[train_idx]
-        X_test = X[test_idx]
+        # for each split
+        for i, (train_idx, test_idx) in enumerate(kf.split(np.zeros((n, 1)))):
 
-        # fill dw1 row
-        dw1[i,:] = Parallel(n_jobs=n_jobs)(delayed(process_k)(j, X_train, X_test, params) for j in ks)
+            # set train/test
+            X_train = X[train_idx]
+            X_test = X[test_idx]
+
+            print("Repeat {}, split {}".format(p, i))
+
+            # fill dw1 row
+            dw1[p*n_splits+i,:] = Parallel(n_jobs=n_jobs)(delayed(process_k)(j, X_train, X_test, params) for j in ks)
     
     print(np.mean(dw1, axis=0))
 
@@ -118,7 +123,7 @@ def compute(input, n, method, graph, k_min, k_max, k_num, delta, r, n_jobs):
     time_ = now.strftime("%H-%M-%S")
     
     # save to file
-    filename = "./data/{}_{}_{}_{}_n_{}_kmin_{}_kmax_{}_knum_{}_delta_{}_r_{}.npy".format(date_, time_, method, graph, n, k_min, k_max, k_num, delta, r)
+    filename = "./data/{}_{}_{}_{}_n_{}_kmin_{}_kmax_{}_knum_{}_delta_{}_r_{}_halved.npy".format(date_, time_, method, graph, n, k_min, k_max, k_num, delta, r)
     np.save(filename, dw1)
 
     #print("{:.3f}±{:.3f}".format(np.mean(dw1), np.std(dw1)))

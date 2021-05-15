@@ -3,8 +3,8 @@ PARAMETER SEARCH
 Script works as follows
 - for each k breaks data to 5 splits of 80/20 ratio
 - 20% of point clouds in each split are oversampled to match the cardinality of 80% (i.e. x4)
-- the Wasserstein distance averaged over splits is computed for each k, ranging in np.linspace(k_min, k_max, k_num)
-- the resulting vector of shape (k_num,) is saved to ./data folder on host machine
+- the Wasserstein distance over splits is computed for each k, ranging in np.linspace(k_min, k_max, k_num)
+- the resulting matrix of shape (5,k_num) is saved to ./data folder on host machine
 
 BUILD IMAGE
 -----------
@@ -21,7 +21,7 @@ RUN CONTAINER
 
 To run a container execute:
 
-$ docker run --rm -v "$(pwd)"/data:/exp/data --name okachan_smote_parameters smote_parameters -i ./data/w300.npy -n 100 -k_min 3 -k_max 12 -k_num 4 -j 4
+$ docker run --rm -d -v "$(pwd)"/data:/exp/data --name okachan_smote_parameters_detached smote_parameters -i ./data/w300.npy -k_min 3 -k_max 12 -k_num 4 -j 4 -n 200
 
 -i        name of the input file
 -m        method, eigher 'simplicial' or 'simplicial_maximal', if omitted 'simplicial_maximal'
