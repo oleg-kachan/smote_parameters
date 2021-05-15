@@ -118,7 +118,7 @@ def compute(input, n, method, graph, k_min, k_max, k_num, delta, r, n_jobs):
     time_ = now.strftime("%H-%M-%S")
     
     # save to file
-    filename = "./data/{}_{}_{}_{}_kmin_{}_kmax_{}_knum_{}_delta_{}_r_{}.npy".format(date_, time_, method, graph, k_min, k_max, k_num, delta, r)
+    filename = "./data/{}_{}_{}_{}_n_{}_kmin_{}_kmax_{}_knum_{}_delta_{}_r_{}.npy".format(date_, time_, method, graph, n, k_min, k_max, k_num, delta, r)
     np.save(filename, dw1)
 
     #print("{:.3f}±{:.3f}".format(np.mean(dw1), np.std(dw1)))

@@ -21,7 +21,7 @@ RUN CONTAINER
 
 To run a container execute:
 
-$ docker run --rm -v "$(pwd)"/data:/exp/data smote_parameters -i ./data/w300.npy -n 100 -k_min 3 -k_max 12 -k_num 4 -j 4
+$ docker run --rm -v "$(pwd)"/data:/exp/data --name okachan_smote_parameters smote_parameters -i ./data/w300.npy -n 100 -k_min 3 -k_max 12 -k_num 4 -j 4
 
 -i        name of the input file
 -m        method, eigher 'simplicial' or 'simplicial_maximal', if omitted 'simplicial_maximal'
