@@ -1,7 +1,7 @@
 PARAMETER SEARCH
 ----------------
 Script works as follows
-- breaks data to 5 splits of 80/20 ratio
+- for each k breaks data to 5 splits of 80/20 ratio
 - 20% of point clouds in each split are oversampled to match the cardinality of 80% (i.e. x4)
 - the Wasserstein distance averaged over splits is computed for each k, ranging in np.linspace(k_min, k_max, k_num)
 - the resulting vector of shape (k_num,) is saved to ./data folder on host machine
