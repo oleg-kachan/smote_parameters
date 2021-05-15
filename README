@@ -1,0 +1,70 @@
+PARAMETER SEARCH
+----------------
+Script works as follows
+- breaks data to 5 splits of 80/20 ratio
+- 20% of point clouds in each split are oversampled to match the cardinality of 80% (i.e. x4)
+- the Wasserstein distance averaged over splits is computed for each k, ranging in np.linspace(k_min, k_max, k_num)
+- the resulting vector of shape (k_num,) is saved to ./data folder on host machine
+
+BUILD IMAGE
+-----------
+To build an image exectute in the directory with Dockerfile:
+
+$ docker build -t smote_parameters .
+
+RUN CONTAINER
+-------------
+- prepare landmarks numpy .npy files in the format (n_landmarks, n_points, n_dims) in the ./data folder
+- the resulting data -- will be also saved in the ./data folder in a .npy file, with a name
+  containing date, time and the parameters used to run script, for example:
+  '15-05-2021_14-25-08_simplicial_maximal_cknn_kmin_3_kmax_12_knum_4_delta_1.0_r_0.npy'
+
+To run a container execute:
+
+$ docker run --rm -v "$(pwd)"/data:/exp/data smote_parameters -i ./data/w300.npy -n 100 -k_min 3 -k_max 12 -k_num 4 -j 4
+
+-i        name of the input file
+-m        method, eigher 'simplicial' or 'simplicial_maximal', if omitted 'simplicial_maximal'
+-g        neighborgood graph 'knn' or 'cknn', if omitted 'cknn'
+-n        number of point clouds to consider, if omitted consider all point clouds
+-k_min    lower bound for k_nearest neighbors
+-k_max    upper bound for k_nearest neighbors (inclusive)
+-k_num    number of steps for the np.linspace(k_min, k_max, k_num) function
+-d        delta parameter, controlling the number of all balls, only used in ckNN graph
+-r        random state, 0 if omitted
+-j        number of jobs, 4 if omitted, select as the number of processors available, upper bounded by k_num
+
+Container could be run interactively, giving the access to the command prompt within container:
+
+$ docker run -it -v "$(pwd)"/data:/exp/data smote_parameters
+
+PARAMETERS TO PASS
+------------------
+Example 1
+
+Input    ./data/w300.npy
+Method   simplicial_maximal
+Graph    knn
+k        ~np.linspace(3, 30, 28) - every Z from 3 to 30
+j        28, upper bounded by k_num
+
+$ python3.9 parameter_search.py -i ./data/w300.npy -m simplicial_maximal -g knn -k_min 3 -k_max 30 -k_num 28 -j 28
+
+Example 2
+
+Input    ./data/w300.npy
+Method   simplicial
+Graph    cknn
+k        ~np.linspace(3, 30, 28) - every Z from 3 to 30
+d        1.05, usually it is meaningful to check small vicinity around 1.0, think of 0.9 - 1.2 for example
+j        28, upper bounded by k_num
+
+$ python3.9 parameter_search.py -i ./data/w300.npy -m simplicial -g cknn -k_min 3 -k_max 30 -k_num 28 -d 1.05 -j 28
+
+One could run the script on first n points clouds by specifying -n key, may be useful for performance tests:
+
+$ python3.9 parameter_search.py -i ./data/w300.npy -n 100 -k_min 3 -k_max 12 -k_num 4 -j 4
+
+PARAMETERS HELP
+---------------
+$ python3.9 parameter_search.py --help
