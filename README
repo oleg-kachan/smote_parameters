@@ -11,6 +11,7 @@ BUILD IMAGE
 To build an image exectute in the directory with Dockerfile:
 
 $ docker build -t smote_parameters .
+$ docker build -t smote_parameters2 -f Dockerfile2 .
 
 RUN CONTAINER
 -------------
@@ -21,7 +22,9 @@ RUN CONTAINER
 
 To run a container execute:
 
-$ docker run --rm -d -v "$(pwd)"/data:/exp/data --name okachan_smote_parameters_detached smote_parameters -i ./data/w300.npy -k_min 3 -k_max 12 -k_num 4 -j 4 -n 200
+$ docker run -d --rm -v "$(pwd)"/data:/exp/data --name okachan_smote_parameters_detached smote_parameters -i ./data/w300.npy -k_min 3 -k_max 12 -k_num 4 -j 4 -n 200
+
+$ docker run -d --rm -v "$(pwd)"/data:/exp/data --name okachan_smote_parameters2_simplicial_knn smote_parameters2 -i ./data/w300.npy -m simplicial -g knn -k_min 3 -k_max 45 -k_num 15 -j 15
 
 -i        name of the input file
 -m        method, eigher 'simplicial' or 'simplicial_maximal', if omitted 'simplicial_maximal'
@@ -36,7 +39,7 @@ $ docker run --rm -d -v "$(pwd)"/data:/exp/data --name okachan_smote_parameters_
 
 Container could be run interactively, giving the access to the command prompt within container:
 
-$ docker run -it -v "$(pwd)"/data:/exp/data smote_parameters
+$ docker run -it -v "$(pwd)"/data:/exp/data smote_parameters2
 
 PARAMETERS TO PASS
 ------------------
@@ -63,7 +66,7 @@ $ python3.9 parameter_search.py -i ./data/w300.npy -m simplicial -g cknn -k_min 
 
 One could run the script on first n points clouds by specifying -n key, may be useful for performance tests:
 
-$ python3.9 parameter_search.py -i ./data/w300.npy -n 100 -k_min 3 -k_max 12 -k_num 4 -j 4
+$ python3.9 parameter_search2.py -i ./data/w300.npy -n 100 -k_min 3 -k_max 12 -k_num 4 -j 4
 
 PARAMETERS HELP
 ---------------

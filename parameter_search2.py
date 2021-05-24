@@ -61,7 +61,7 @@ def process_k(k, X_train, X_test, params, factor=100):
     return double_wasserstein1(X_train_smote) * factor
 
 
-def compute(input, n, method, graph, k_min, k_max, k_num, delta, r, n_jobs):
+def compute(input, n, method, graph, k_min, k_max, k_num, delta, r, n_jobs, n_repeats, n_splits):
     print("INPUT: {}\nNUMBER: {}\nMETHOD: {}\nGRAPH: {}\nk (min/max/num): {}, {}, {}\ndelta: {}\nrandom_state: {}\nn_jobs: {}".format(
         input[0], n,
         method, graph,
@@ -91,8 +91,11 @@ def compute(input, n, method, graph, k_min, k_max, k_num, delta, r, n_jobs):
     print("take_n", n)
     print("KS", ks)
 
-    n_repeats = 5
-    n_splits = 2
+    #n_repeats = 10
+    #n_splits = 5
+
+    print("# repeats: {}, # splits: {}".format(n_repeats, n_splits))
+
     factor = 100
 
     dw1 = np.zeros((n_splits * n_repeats, k_num))
@@ -123,7 +126,7 @@ def compute(input, n, method, graph, k_min, k_max, k_num, delta, r, n_jobs):
     time_ = now.strftime("%H-%M-%S")
     
     # save to file
-    filename = "./data/{}_{}_{}_{}_n_{}_kmin_{}_kmax_{}_knum_{}_delta_{}_r_{}_halved.npy".format(date_, time_, method, graph, n, k_min, k_max, k_num, delta, r)
+    filename = "./data/{}_{}_{}_{}_n_{}_kmin_{}_kmax_{}_knum_{}_delta_{}_r_{}_p_{}_s_{}.npy".format(date_, time_, method, graph, n, k_min, k_max, k_num, delta, r, n_repeats, n_splits)
     np.save(filename, dw1)
 
     #print("{:.3f}±{:.3f}".format(np.mean(dw1), np.std(dw1)))
@@ -150,8 +153,10 @@ if __name__ == "__main__":
     group2.add_argument("-k_num", "--k_num", type=int, help="Number k of neighbords to consider, num", default=True)
     group2.add_argument("-d", "--delta", type=float, help="Radius parameter delta, default=1.0", default=1.0)
 
-    group3 = parser.add_argument_group("Random state")
+    group3 = parser.add_argument_group("General parameters")
     group3.add_argument("-r", "--random_state", type=int, help="Random state", default=0)
+    group3.add_argument("-p", "--n_repeats", type=int, help="Number of repeats", default=10)
+    group3.add_argument("-s", "--n_splits", type=int, help="Number of splits", default=5)
 
     group4 = parser.add_argument_group("Number of parallel job processes")
     group4.add_argument("-j", "--n_jobs", type=int, help="Number of job processes, default=4", default=4)
@@ -160,4 +165,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # run
-    compute(args.input, args.number, args.method, args.graph, args.k_min, args.k_max, args.k_num, args.delta, args.random_state, args.n_jobs)
+    compute(args.input, args.number, args.method, args.graph, args.k_min, args.k_max, args.k_num, args.delta, args.random_state, args.n_jobs, args.n_repeats, args.n_splits)
