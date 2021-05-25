@@ -81,11 +81,6 @@ def compute(input_train, input_test, n, method, graph, k_min, k_max, k_num, delt
     # load train/test data
     X_tr = np.load(input_train[0]) # w300_train_3148.npy
     X_ts = np.load(input_test[0]) # w300_test_689.npy
-
-    if n is not None:
-        X = X[:n]
-
-    n, m, _ = X.shape
     
     ks = []
     for i in np.linspace(k_min, k_max, k_num):
@@ -93,9 +88,6 @@ def compute(input_train, input_test, n, method, graph, k_min, k_max, k_num, delt
 
     print("take_n", n)
     print("KS", ks)
-
-    #n_repeats = 10
-    #n_splits = 5
 
     print("# repeats: {}".format(n_repeats))
 
