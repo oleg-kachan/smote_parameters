@@ -63,7 +63,7 @@ def process_k(k, X_train, X_test, params, factor=100):
 
 def compute(input_train, input_test, n, method, graph, k_min, k_max, k_num, delta, r, n_jobs, n_repeats):
     print("INPUT: {}\nNUMBER: {}\nMETHOD: {}\nGRAPH: {}\nk (min/max/num): {}, {}, {}\ndelta: {}\nrandom_state: {}\nn_jobs: {}".format(
-        input[0], n,
+        input_train[0], n,
         method, graph,
         k_min, k_max, k_num,
         delta,
