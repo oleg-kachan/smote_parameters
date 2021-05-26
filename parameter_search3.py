@@ -40,35 +40,36 @@ def double_wasserstein1(X_train_smote):
     M1 = M1 + M1.T
     np.fill_diagonal(M1, 1e9)
 
-    # 1-Wasserstein distance btw collections of point clouds
+    # 1-Wasserstein double distance btw collections of point clouds
     W1 = ot.emd2(a2, b2, M1)
     
     return W1
 
 
-def process_k(k, X_train, X_test, params, factor=100):
+def process_k(k, X_span, X_true, params, factor=100):
     
-    # fit oversampler to X_test
-    oversampler = wasserstein_smote.Oversampling(X_test, k=k, kernel=params["graph"], d=params["delta"], random_state=params["r"], n_jobs=4)
+    # fit oversampler to X_span
+    oversampler = wasserstein_smote.Oversampling(X_span, k=k, kernel=params["graph"], d=params["delta"], random_state=params["r"], n_jobs=4)
 
-    # generate synthetic points to match X_train in size
-    X_smote = oversampler.sample(method=params["method"], n=(X_train.shape[0],1))
+    # generate synthetic points to match X_true in size
+    X_smote = oversampler.sample(method=params["method"], n=(X_true.shape[0],1))
 
-    # merge train and SMOTE data points
-    X_train_smote = np.concatenate((np.expand_dims(X_train, 0), np.expand_dims(X_smote, 0)), axis=0)
+    # merge true and SMOTE data points
+    X_true_smote = np.concatenate((np.expand_dims(X_true, 0), np.expand_dims(X_smote, 0)), axis=0)
 
     # compute double Wasserstein distance
-    return double_wasserstein1(X_train_smote) * factor
+    return double_wasserstein1(X_true_smote) * factor
 
 
-def compute(input_train, input_test, n, method, graph, k_min, k_max, k_num, delta, r, n_jobs, n_repeats):
-    print("INPUT: {}\nNUMBER: {}\nMETHOD: {}\nGRAPH: {}\nk (min/max/num): {}, {}, {}\ndelta: {}\nrandom_state: {}\nn_jobs: {}".format(
-        input_train[0], n,
+def compute(input_span, input_true, n, method, graph, k_min, k_max, k_num, delta, r, n_jobs, n_repeats):
+    print("INPUT: {}\nNUMBER: {}\nMETHOD: {}\nGRAPH: {}\nk (min/max/num): {}, {}, {}\ndelta: {}\nrandom_state: {}\nn_jobs: {}\nn_repeats: {}".format(
+        input_span[0], n,
         method, graph,
         k_min, k_max, k_num,
         delta,
         r,
-        n_jobs))
+        n_jobs,
+        n_repeats))
 
     # params
     params = {
@@ -78,18 +79,18 @@ def compute(input_train, input_test, n, method, graph, k_min, k_max, k_num, delt
         "r": r
     }
 
-    # load train/test data
-    X_tr = np.load(input_train[0]) # w300_train_3148.npy
-    X_ts = np.load(input_test[0]) # w300_test_689.npy
+    # load span/true data
+    X_span = np.load(input_span[0]) # w300_train_3148.npy
+    X_true = np.load(input_true[0]) # w300_test_689.npy
+
+    if n is None:
+        n = X_span.shape[0]
     
     ks = []
     for i in np.linspace(k_min, k_max, k_num):
         ks.append(np.ceil(i).astype(int))
-
-    print("take_n", n)
+    
     print("KS", ks)
-
-    print("# repeats: {}".format(n_repeats))
 
     factor = 100
 
@@ -98,16 +99,17 @@ def compute(input_train, input_test, n, method, graph, k_min, k_max, k_num, delt
     for p in range(n_repeats):
 
         # randomly select n point clouds from test
-        train_idx = np.random.choice(X_tr.shape[0], n, replace=False)
+        span_idx = np.random.choice(X_span.shape[0], n, replace=False)
+        #test_idx = np.random.choice(X_ts.shape[0], n, replace=False)
 
         # set train/test
-        X_train = X_tr[train_idx]
-        X_test = X_ts
+        X_span = X_span[span_idx]
+        X_true = X_true
 
         print("Repeat {}".format(p))
 
-        # fill dw1 row
-        dw1[p,:] = Parallel(n_jobs=n_jobs)(delayed(process_k)(j, X_train, X_test, params) for j in ks)
+        # fill dw1 row with each k
+        dw1[p,:] = Parallel(n_jobs=n_jobs)(delayed(process_k)(j, X_span, X_true, params) for j in ks)
     
     print(np.mean(dw1, axis=0))
 
@@ -117,7 +119,7 @@ def compute(input_train, input_test, n, method, graph, k_min, k_max, k_num, delt
     time_ = now.strftime("%H-%M-%S")
     
     # save to file
-    filename = "./data/{}_{}_{}_{}_n_{}_kmin_{}_kmax_{}_knum_{}_delta_{}_r_{}_p_{}.npy".format(date_, time_, method, graph, n, k_min, k_max, k_num, delta, r, n_repeats)
+    filename = "./data/{}_{}_{}_{}_n_{}_kmin_{}_kmax_{}_knum_{}_delta_{}_r_{}_p_{}_span.npy".format(date_, time_, method, graph, n, k_min, k_max, k_num, delta, r, n_repeats)
     np.save(filename, dw1)
 
     #print("{:.3f}±{:.3f}".format(np.mean(dw1), np.std(dw1)))
@@ -133,9 +135,9 @@ if __name__ == "__main__":
 
     # configure parser
     group1 = parser.add_argument_group("Input/output file names")
-    group1.add_argument("-i_train", "--input_train", help='Train input, .npy file of landmarks', nargs='*', required=True)
-    group1.add_argument("-i_test", "--input_test", help='Test input, .npy file of landmarks', nargs='*', required=True)
-    group1.add_argument("-n", "--number", type=int, help="Number of landmarks to consider (if omitted consider all landmarks)", default=None)
+    group1.add_argument("-i_span", "--input_span", help='Span input, .npy file of landmarks', nargs='*', required=True)
+    group1.add_argument("-i_true", "--input_true", help='True input, .npy file of landmarks', nargs='*', required=True)
+    group1.add_argument("-n", "--number", type=int, help="Number of landmarks from span to consider (if omitted consider all landmarks)", default=None)
 
     group2 = parser.add_argument_group("Algorithm configuration")
     group2.add_argument("-m", "--method", choices=["SMOTE", "simplicial", "simplicial_maximal"], help="Oversampling method, default='simplicial_maximal'", default="simplicial_maximal")
@@ -156,4 +158,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # run
-    compute(args.input_train, args.input_test, args.number, args.method, args.graph, args.k_min, args.k_max, args.k_num, args.delta, args.random_state, args.n_jobs, args.n_repeats)
+    compute(args.input_span, args.input_true, args.number, args.method, args.graph, args.k_min, args.k_max, args.k_num, args.delta, args.random_state, args.n_jobs, args.n_repeats)
